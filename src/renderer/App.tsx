@@ -1,6 +1,7 @@
 import { MemoryRouter as Router, Routes, Route } from 'react-router-dom';
 import icon from '../../assets/icon.svg';
 import './App.css';
+import {IPC_MESSAGES} from '../main/constanta';
 
 function Hello() {
   return (
@@ -22,18 +23,18 @@ function Hello() {
             Read our docs
           </button>
         </a>
-        <a
-          href="https://github.com/sponsors/electron-react-boilerplate"
-          target="_blank"
-          rel="noreferrer"
+        <button
+          type="button"
+          onClick={() => {
+            console.log('TEST');
+            window.electron.ipcRenderer.sendMessage(IPC_MESSAGES.EXECUTE_FILE, '');
+          }}
         >
-          <button type="button">
-            <span role="img" aria-label="folded hands">
-              🙏
-            </span>
-            Donate
-          </button>
-        </a>
+          <span role="img" aria-label="folded hands">
+            🙏
+          </span>
+          Donate
+        </button>
       </div>
     </div>
   );

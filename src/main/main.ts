@@ -14,6 +14,9 @@ import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
 import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
+import { readFile } from './hello';
+import { IPC_MESSAGES } from './constanta';
+// import { readFile } from './hello';
 
 class AppUpdater {
   constructor() {
@@ -57,6 +60,7 @@ const installExtensions = async () => {
 };
 
 const createWindow = async () => {
+  // readFile();
   if (isDebug) {
     await installExtensions();
   }
@@ -135,3 +139,8 @@ app
     });
   })
   .catch(console.log);
+
+ipcMain.on(IPC_MESSAGES.EXECUTE_FILE, async (event, arg) => {
+  console.log('Received request:', arg);
+  readFile();
+});

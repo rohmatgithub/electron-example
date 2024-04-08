@@ -11,3 +11,8 @@ export function resolveHtmlPath(htmlFileName: string) {
   }
   return `file://${path.resolve(__dirname, '../renderer/', htmlFileName)}`;
 }
+
+export const IPC_MESSAGES = {
+  EXAMPLE: 'ipc-example',
+  EXECUTE_FILE: 'execute-file',
+} as const;
