@@ -15,7 +15,8 @@ import log from 'electron-log';
 import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
 import { readFile } from './update';
-import { IPC_MESSAGES } from './constanta';
+import { Config, IPC_MESSAGES } from './constanta';
+import fs from 'fs';
 // import { readFile } from './hello';
 
 class AppUpdater {
@@ -142,6 +143,18 @@ app
 
 ipcMain.on(IPC_MESSAGES.EXECUTE_FILE, async (event, arg) => {
   console.log('Received request:', arg);
-  event.reply(IPC_MESSAGES.EXECUTE_FILE, "MASUK");
   readFile(event);
+});
+
+ipcMain.on(IPC_MESSAGES.GET_VERSION, async (event, arg) => {
+  console.log('Received request:', arg);
+
+  // READ FILE CONFIG
+  let config: Config = {
+    version: '',
+  };
+  const dataConfig = fs.readFileSync('./config.json', 'utf8');
+  config = JSON.parse(dataConfig);
+  console.log('CONFIG : ', config.version);
+  event.reply(IPC_MESSAGES.GET_VERSION, config.version);
 });
