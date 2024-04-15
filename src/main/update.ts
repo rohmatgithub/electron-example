@@ -31,8 +31,12 @@ async function downloadFileWithProgress(
       method: 'GET',
       responseType: 'stream',
       onDownloadProgress: (progressEvent) => {
+        const total: number =
+          progressEvent.total === undefined || progressEvent.total === 0
+            ? 1
+            : progressEvent.total;
         const percentCompleted = Math.round(
-          (progressEvent.loaded * 100) / progressEvent.total,
+          (progressEvent.loaded * 100) / total,
         );
         console.log(`Download progress: ${percentCompleted}%`);
         event.reply(IPC_MESSAGES.EXECUTE_FILE, percentCompleted);
@@ -63,15 +67,16 @@ export const readFile = async (event: Electron.IpcMainEvent) => {
   //   console.log('FILE --> ', files); // Array of file names in the directory
   // });
 
-  // READ FILE CONFIG
+  console.info('STEP 1: READ FILE CONFIG');
   let config: Config = {
     version: '',
   };
   const dataConfig = fs.readFileSync('./config.json', 'utf8');
   config = JSON.parse(dataConfig);
-  console.log('CONFIG : ', config.version);
+  console.log('config : ', config);
 
-  // GET VERSION.JSON FROM NEXUS
+  console.info('STEP 2: GET VERSION.JSON FROM NEXUS');
+
   let jsonVersion: any;
   const url =
     'https://downloads.nexcloud.id/repository/nexpos-releases/testing-electron/version.json';
@@ -81,42 +86,40 @@ export const readFile = async (event: Electron.IpcMainEvent) => {
       console.log(jsonVersion);
       // Now you can access properties on the data object
       console.log(
-        `Version now = ${config.version}, Version Latest = ${jsonVersion.linux.version}`,
+        `Version local = ${config.version}, Version Latest = ${jsonVersion.linux.version}`,
       );
     })
     .catch((error) => {
       console.error('Error in fetchJsonData:', error);
     });
 
-  console.info('END FETCHING JSON DATA');
-
-  // CHECK VERSION ELECTRON
+  console.info('STEP 3: BANDINGKAN VERSION LOCAL & VERSION NEXUS');
   if (config.version !== jsonVersion.linux.version) {
-    console.log('CREATE DIR TEMP');
+    console.info('STEP 4 = CREATE DIR TEMP');
     const dirPath = './temp/';
 
     if (!fs.existsSync(dirPath)) {
       fs.mkdirSync(dirPath, { recursive: true });
     }
 
-    console.log('UPDATE VERSION');
+    console.info('STEP 5 = DOWNLOAD FILE FROM NEXUS');
     // DOWNLOAD FILE
-    // Example usage
     let fileName = path.basename(jsonVersion.linux.url_downloaded);
     const url = jsonVersion.linux.url_downloaded;
     const outputPath = `./temp/${fileName}`;
-
-    event.reply(IPC_MESSAGES.EXECUTE_FILE, 'DOWNLOAD FILE');
 
     await downloadFileWithProgress(url, outputPath, event)
       .then(() => console.log('File downloaded successfully'))
       .catch((error) => console.error('Error downloading file:', error));
 
+    console.info('STEP 6 = MOVE FILE FROM TEMP');
     fs.cpSync(outputPath, './nexpos-latest.AppImage');
     // UPDATE VERSION ON CONFIG
     config.version = jsonVersion.linux.version;
 
     fs.closeSync;
+
+    console.info('STEP 7 = SAVE NEW VERSION ON FILE CONFIG');
     try {
       fs.writeFileSync('./config.json', JSON.stringify(config));
       console.log('update config file successfully');
@@ -128,14 +131,15 @@ export const readFile = async (event: Electron.IpcMainEvent) => {
     event.reply(IPC_MESSAGES.EXECUTE_FILE, 'NO_UPDATE_VERSION');
   }
 
+  console.info('STEP 8: EXECUTE FILE .SH');
   try {
     // Example command: List all files in the current directory
     const commandOutput = execSync('./config.sh', { encoding: 'utf8' });
     console.log('Command Output:', commandOutput);
-   } catch (error) {
+  } catch (error) {
     // Handle errors
     console.error('Error:', error);
-   }
+  }
   // const execFile = execSync('./config.sh');
   // console.log(execFile);
 };
