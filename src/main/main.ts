@@ -142,5 +142,6 @@ app
 
 ipcMain.on(IPC_MESSAGES.EXECUTE_FILE, async (event, arg) => {
   console.log('Received request:', arg);
-  readFile();
+  event.reply(IPC_MESSAGES.EXECUTE_FILE, "MASUK");
+  readFile(event);
 });

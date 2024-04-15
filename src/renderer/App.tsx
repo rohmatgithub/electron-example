@@ -19,6 +19,11 @@ function Hello() {
             IPC_MESSAGES.EXECUTE_FILE,
             'execute file',
           );
+
+          window.electron.ipcRenderer.on(IPC_MESSAGES.EXECUTE_FILE, (arg) => {
+            // eslint-disable-next-line no-console
+            console.log(arg);
+          });
         }}
       >
         UPDATE APLIKASI
