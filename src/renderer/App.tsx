@@ -1,15 +1,18 @@
 import { MemoryRouter as Router, Routes, Route } from 'react-router-dom';
 import './App.css';
-import { IPC_MESSAGES } from '../main/constanta';
 import { useEffect, useState } from 'react';
-import { CircularProgressbar } from 'react-circular-progressbar';
 import 'react-circular-progressbar/dist/styles.css';
-import { relative } from 'path';
+import { IPC_MESSAGES } from '../main/constanta';
+// import UpdatePage from './UpdatePage';
+// import ViewCrypto from './Crypto';
 
 function Hello() {
   const [version, setVersion] = useState('TEST');
-  const [percentage, setPercentage] = useState(0);
-  const [loading, setLoading] = useState(false);
+  // const [percentage, setPercentage] = useState(0);
+  // const [loading, setLoading] = useState(false);
+  const [inputString, setInputString] = useState('');
+  const [outputString, setOutputString] = useState();
+
   useEffect(() => {
     window.electron.ipcRenderer.once(IPC_MESSAGES.GET_VERSION, (arg: any) => {
       // eslint-disable-next-line no-console
@@ -22,59 +25,57 @@ function Hello() {
     );
   }, [version]);
 
+  const decrypt = () => {
+    window.electron.ipcRenderer.sendMessage('decrypt', inputString);
+
+    window.electron.ipcRenderer.once('decrypt', (arg: any) => {
+      setOutputString(arg);
+    });
+  };
+
+  const encrypt = () => {
+    window.electron.ipcRenderer.sendMessage('encrypt', inputString);
+
+    window.electron.ipcRenderer.once('encrypt', (arg: any) => {
+      setOutputString(arg);
+    });
+  };
+
   return (
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        height: '100vh',
-      }}
-    >
-      <div
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-        }}
-      >
-        <h1>NEXPOS VERSION {version}</h1>
-        <button
-          type="button"
-          disabled={loading}
-          onClick={() => {
-            setLoading(true);
-            window.electron.ipcRenderer.sendMessage(
-              IPC_MESSAGES.EXECUTE_FILE,
-              'execute file',
-            );
-
-            window.electron.ipcRenderer.on(IPC_MESSAGES.EXECUTE_FILE, (arg) => {
-              // eslint-disable-next-line no-console
-              // console.log(arg);
-              if ((arg as string) === 'NO_UPDATE_VERSION') {
-                setLoading(false);
-                return;
-              }
-              const p = arg as number;
-              console.log('percentage: ' + p);
-
-              setPercentage(p);
-
-              if (p === 100) {
-                setLoading(false);
-              }
-            });
+    <div>
+      <div>
+        <input
+          type="text"
+          value={inputString}
+          onChange={(e) => {
+            setInputString(e.target.value);
           }}
-        >
-          UPDATE APLIKASI
+          placeholder="Enter text here"
+        />
+      </div>
+
+      <br />
+      <div>
+        <button type="button" onClick={encrypt}>
+          Encrypt
         </button>
       </div>
-      {loading && (
-        <div style={{ minWidth: 100, maxWidth: 100, position: 'absolute' }}>
-          <CircularProgressbar value={percentage} text={`${percentage}%`} />
-        </div>
-      )}
+
+      <br />
+      <div>
+        <button type="button" onClick={decrypt}>
+          Decrypt
+        </button>
+      </div>
+
+      <br />
+      <div>
+        <textarea
+          value={outputString}
+          readOnly
+          placeholder="Output will appear here"
+        />
+      </div>
     </div>
   );
 }

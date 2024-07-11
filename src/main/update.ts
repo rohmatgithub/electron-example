@@ -4,6 +4,7 @@ import { ipcMain } from 'electron';
 import axios from 'axios';
 import path from 'path';
 import { Config, IPC_MESSAGES } from './constanta';
+import { downloadFileWithProgress } from './util';
 // import fetch from 'node-fetch';
 
 const fetchJsonData = async (url: string) => {
@@ -16,47 +17,6 @@ const fetchJsonData = async (url: string) => {
     console.error('Error fetching JSON data:', error);
   }
 };
-
-async function downloadFileWithProgress(
-  url: string,
-  outputPath: string,
-  event: Electron.IpcMainEvent,
-) {
-  try {
-    console.log(`URL: ${url}`);
-    console.log(`Output Path: ${outputPath}`);
-
-    const response = await axios({
-      url,
-      method: 'GET',
-      responseType: 'stream',
-      onDownloadProgress: (progressEvent) => {
-        const total: number =
-          progressEvent.total === undefined || progressEvent.total === 0
-            ? 1
-            : progressEvent.total;
-        const percentCompleted = Math.round(
-          (progressEvent.loaded * 100) / total,
-        );
-        console.log(`Download progress: ${percentCompleted}%`);
-        event.reply(IPC_MESSAGES.EXECUTE_FILE, percentCompleted);
-        // Here you can update your UI to reflect the progress
-      },
-    });
-
-    // Assuming you're using Node.js and want to save the file
-    const fs = require('fs');
-    const writer = fs.createWriteStream(outputPath);
-    response.data.pipe(writer);
-
-    return new Promise((resolve, reject) => {
-      writer.on('finish', resolve);
-      writer.on('error', reject);
-    });
-  } catch (error) {
-    console.error('Error downloading file:', error);
-  }
-}
 
 export const readFile = async (event: Electron.IpcMainEvent) => {
   // fs.readdir('./', (err, files) => {

@@ -12,11 +12,14 @@ import path from 'path';
 import { app, BrowserWindow, shell, ipcMain } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
+import fs from 'fs';
+import os from 'os';
 import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
 import { readFile } from './update';
 import { Config, IPC_MESSAGES } from './constanta';
-import fs from 'fs';
+import updateWin from './updateWin';
+import { encrypt, decrypt } from './crypto';
 // import { readFile } from './hello';
 
 class AppUpdater {
@@ -143,7 +146,12 @@ app
 
 ipcMain.on(IPC_MESSAGES.EXECUTE_FILE, async (event, arg) => {
   console.log('Received request:', arg);
-  readFile(event);
+
+  if (os.platform() === 'linux') {
+    readFile(event);
+  } else if (os.platform() === 'win32') {
+    updateWin(event);
+  }
 });
 
 ipcMain.on(IPC_MESSAGES.GET_VERSION, async (event, arg) => {
@@ -157,4 +165,21 @@ ipcMain.on(IPC_MESSAGES.GET_VERSION, async (event, arg) => {
   config = JSON.parse(dataConfig);
   console.log('CONFIG : ', config.version);
   event.reply(IPC_MESSAGES.GET_VERSION, config.version);
+});
+
+ipcMain.on('install_update_win', (event, downloadPath) => {
+  console.log('downloadPath : ', downloadPath);
+});
+
+const key = Buffer.from('1234567891234567');
+ipcMain.on('encrypt', (event, str) => {
+  const strEncrypt = encrypt(key, str);
+  log.info('str encrypt : ', strEncrypt);
+  event.reply('encrypt', strEncrypt);
+});
+
+ipcMain.on('decrypt', (event, str) => {
+  const strDecypt = decrypt(key, str);
+  log.info('str decrypt : ', strDecypt);
+  event.reply('decrypt', strDecypt);
 });
